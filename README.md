@@ -26,28 +26,23 @@ py -m pip install -r requirements.txt
 
 
 
-Run the complete pipeline from dataset generation through cleaning, database construction, SQL metrics, significance flagging, and report generation:
-
-
+Run the complete pipeline from dataset generation through cleaning, database construction, SQL metrics, significance flagging, and CII report generation:
 
 ```powershell
-
-py run\_pipeline.py
-
+py run_pipeline.py
 ```
 
+Run the human review gate and audit-log validation:
 
+```powershell
+py review_gate.py
+```
 
 Launch the dashboard:
 
-
-
 ```powershell
-
 py -m streamlit run app.py
-
 ```
-
 
 
 The pipeline runs the project stages in this order:
