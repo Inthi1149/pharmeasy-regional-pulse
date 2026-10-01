@@ -445,3 +445,25 @@ if (
         "The available dataset verifies these "
         "movements but does not establish their cause."
     )
+
+    st.subheader("CII Narrative")
+
+    st.markdown("**Context**")
+    st.write(
+        "Guntur recorded sales of INR 78,000.00 in April 2026, "
+        "INR 173,308.20 in May 2026, and INR 124,527.00 in June 2026."
+    )
+
+    st.markdown("**Insight**")
+    st.write(
+        "Guntur sales increased by +122.19% from April to May "
+        "and then decreased by -28.15% from May to June. "
+        "Both movements crossed the 8% operational-alert threshold."
+    )
+
+    st.markdown("**Implication**")
+    st.write(
+        "The movement should be reviewed alongside the underlying "
+        "order mix and available operational or commercial records "
+        "before any cause or business action is concluded."
+    )
