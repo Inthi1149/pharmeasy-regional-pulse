@@ -1,11 +1,11 @@
-region_id,region
-1,Hyderabad
-2,Warangal
-3,Vijayawada
-4,Visakhapatnam
-5,Guntur
-6,Nellore
-7,Tirupati
-8,Karimnagar
-9,Bengaluru
-10,Kurnool
+region,state,tier
+Hyderabad,Telangana,Tier-1
+Warangal,Telangana,Tier-2
+Vijayawada,Andhra Pradesh,Tier-2
+Visakhapatnam,Andhra Pradesh,Tier-2
+Guntur,Andhra Pradesh,Tier-2
+Nellore,Andhra Pradesh,Tier-2
+Tirupati,Andhra Pradesh,Tier-2
+Karimnagar,Telangana,Tier-3
+Bengaluru,Karnataka,Tier-1
+Kurnool,Andhra Pradesh,Tier-3

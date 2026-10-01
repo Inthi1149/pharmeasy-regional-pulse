@@ -24,7 +24,7 @@ def get_region_month_sales():
                 SUM(
                     CASE
                         WHEN substr(o.order_date, 6, 2) = '04'
-                        THEN o.sales
+                        THEN o.sales_inr
                         ELSE 0
                     END
                 ),
@@ -38,7 +38,7 @@ def get_region_month_sales():
                 SUM(
                     CASE
                         WHEN substr(o.order_date, 6, 2) = '05'
-                        THEN o.sales
+                        THEN o.sales_inr
                         ELSE 0
                     END
                 ),
@@ -52,7 +52,7 @@ def get_region_month_sales():
                 SUM(
                     CASE
                         WHEN substr(o.order_date, 6, 2) = '06'
-                        THEN o.sales
+                        THEN o.sales_inr
                         ELSE 0
                     END
                 ),

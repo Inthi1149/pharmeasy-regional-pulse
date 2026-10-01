@@ -45,7 +45,7 @@ def review_gate_v1(
 
     region = report.get(
         "region",
-        "Unknown"
+        "Unknown",
     )
 
     run_id = str(uuid.uuid4())
@@ -74,14 +74,14 @@ def review_gate_v1(
             + "\n"
         )
 
-    return {
-        "decision": decision,
-        "downstream_allowed": downstream_allowed,
-    }
+    updated_report = report.copy()
+    updated_report["decision"] = decision
+    updated_report["downstream_allowed"] = downstream_allowed
+
+    return updated_report
 
 
 def test_review_gate():
-
     sample_report = {
         "region": "Guntur",
         "context": (
@@ -98,9 +98,9 @@ def test_review_gate():
         ),
     }
 
-    print(
-        "\nTEST 1 — APPROVE"
-    )
+    print("\nTEST 1 - APPROVE")
+    print("BEFORE:")
+    print(sample_report)
 
     approve_result = review_gate_v1(
         sample_report,
@@ -108,23 +108,21 @@ def test_review_gate():
         "Evidence checked; approved.",
     )
 
+    print("AFTER:")
     print(approve_result)
 
     assert (
         approve_result["decision"]
         == "approve"
     )
-
     assert (
-        approve_result[
-            "downstream_allowed"
-        ]
+        approve_result["downstream_allowed"]
         is True
     )
 
-    print(
-        "\nTEST 2 — EDIT"
-    )
+    print("\nTEST 2 - EDIT")
+    print("BEFORE:")
+    print(sample_report)
 
     edit_result = review_gate_v1(
         sample_report,
@@ -132,23 +130,21 @@ def test_review_gate():
         "Revise wording before use.",
     )
 
+    print("AFTER:")
     print(edit_result)
 
     assert (
         edit_result["decision"]
         == "edit"
     )
-
     assert (
-        edit_result[
-            "downstream_allowed"
-        ]
+        edit_result["downstream_allowed"]
         is False
     )
 
-    print(
-        "\nTEST 3 — REJECT"
-    )
+    print("\nTEST 3 - REJECT")
+    print("BEFORE:")
+    print(sample_report)
 
     reject_result = review_gate_v1(
         sample_report,
@@ -156,23 +152,19 @@ def test_review_gate():
         "Report rejected after review.",
     )
 
+    print("AFTER:")
     print(reject_result)
 
     assert (
         reject_result["decision"]
         == "reject"
     )
-
     assert (
-        reject_result[
-            "downstream_allowed"
-        ]
+        reject_result["downstream_allowed"]
         is False
     )
 
-    print(
-        "\nTEST 4 — INVALID INPUT"
-    )
+    print("\nTEST 4 - INVALID INPUT")
 
     try:
         review_gate_v1(
@@ -192,30 +184,12 @@ def test_review_gate():
             "Invalid decision was not blocked."
         )
 
-    print(
-        "\nREVIEW GATE ACCEPTANCE CHECKS"
-    )
-
-    print(
-        "-----------------------------"
-    )
-
-    print(
-        "Approve path passed."
-    )
-
-    print(
-        "Edit path passed."
-    )
-
-    print(
-        "Reject path passed."
-    )
-
-    print(
-        "Invalid decision validation passed."
-    )
-
+    print("\nREVIEW GATE ACCEPTANCE CHECKS")
+    print("-----------------------------")
+    print("Approve path passed.")
+    print("Edit path passed.")
+    print("Reject path passed.")
+    print("Invalid decision validation passed.")
     print(
         f"Audit entries appended to "
         f"{AUDIT_LOG_FILE}"

@@ -1,4 +1,4 @@
-\# PharmEasy Regional Pulse — Data Quality Report
+\# PharmEasy Regional Pulse - Data Quality Report
 
 
 
@@ -10,7 +10,29 @@ This report documents the data-quality checks and cleaning actions applied to th
 
 
 
-The raw dataset contained 2,159 rows. After removing 59 exact duplicate rows, the final cleaned dataset contained 2,100 unique order records.
+The official raw dataset contains 2,159 rows. After removing 59 exact duplicate rows, the cleaned dataset contains 2,100 unique order records.
+
+
+
+The required order schema is:
+
+
+
+\- order\_id
+
+\- order\_date
+
+\- region
+
+\- category
+
+\- product
+
+\- quantity
+
+\- sales\_inr
+
+\- profit\_inr
 
 
 
@@ -22,21 +44,19 @@ The raw dataset contained 2,159 rows. After removing 59 exact duplicate rows, th
 
 |---|---|---|---|
 
-| Accuracy | Region names appeared in inconsistent forms | Region values were mapped to approved canonical region names | Regional analysis uses standardized names |
+| Accuracy | Missing category values could make product-category relationships inaccurate | Missing categories were restored using the product-to-category lookup | 48 missing category values were repaired and 0 remain |
 
-| Completeness | 48 category values were missing | Missing categories were imputed using the product-to-category lookup | 0 missing category values remain |
+| Completeness | Category and profit values were missing after duplicate removal | Category was imputed from the product lookup and profit was imputed using category mean profit margin | 48 missing category values and 94 missing profit values were reduced to 0 |
 
-| Completeness | 94 profit values were missing | Missing profit was imputed using the mean margin for the corresponding category | 0 missing profit values remain |
+| Consistency | Raw region names contained inconsistent capitalization and whitespace variants | Region values were stripped and standardized to title case | 16 distinct raw region variants were standardized to 9 active canonical regions |
 
-| Consistency | Region names used different capitalization, spacing, and aliases | Region values were stripped, converted for lookup, and mapped to canonical names | 9 active canonical regions remain |
+| Timeliness | The analysis requires the April-June 2026 reporting period | Order dates were checked as part of the generated reporting dataset | The dataset supports April, May, and June 2026 monthly analysis |
 
-| Timeliness | Orders must represent the required analysis period | Order dates were generated for April, May, and June 2026 | Dataset supports the required monthly comparison |
+| Validity | Processing must stop when a required schema field is unavailable | The required 8-column schema was validated, and a deliberately broken copy without `profit\_inr` was tested | Valid data passed and the broken schema was blocked |
 
-| Validity | Required fields must exist before processing | `validate\_schema()` checks the dataset against the required column list | Clean dataset returned `validated` |
+| Uniqueness | The raw dataset contained exact duplicate rows | Exact duplicates were removed before region normalization and imputation | 59 exact duplicates were removed, reducing 2,159 rows to 2,100 |
 
-| Uniqueness | Raw data contained duplicate order rows | Exact duplicates were removed before other cleaning operations | 59 exact duplicates removed |
-
-| Relevance | Analysis requires order, region, product, category, sales, profit, and date information | Only fields relevant to the regional performance analysis were retained/generated | Dataset supports regional and category analysis |
+| Relevance | The analysis requires fields that support regional, monthly, category, sales, profit, quantity, and order analysis | The required order fields were retained for the regional performance workflow | The cleaned dataset supports the required analysis and dashboard |
 
 
 
@@ -52,11 +72,11 @@ The cleaning pipeline was applied in the following order:
 
 2\. Remove exact duplicate rows.
 
-3\. Normalize region names.
+3\. Strip whitespace from region values and standardize them to title case.
 
 4\. Impute missing category values using the product-to-category lookup.
 
-5\. Impute missing profit values using category mean margin.
+5\. Impute missing `profit\_inr` values using the mean category margin calculated from `profit\_inr / sales\_inr`.
 
 6\. Validate the cleaned dataset.
 
@@ -76,9 +96,13 @@ The cleaning pipeline was applied in the following order:
 
 \- Raw row count: 2,159
 
-\- Required schema status: `validated`
+\- Required schema status: validated
+
+\- Required columns: 8
 
 \- Missing required columns: none
+
+\- Distinct raw region variants: 16
 
 
 
@@ -90,19 +114,21 @@ The cleaning pipeline was applied in the following order:
 
 \- Rows remaining after duplicate removal: 2,100
 
+\- Clean order IDs are unique
+
 
 
 \### Missing-Value Check
 
 
 
-Before imputation:
+After duplicate removal and before imputation:
 
 
 
 \- Missing category values: 48
 
-\- Missing profit values: 94
+\- Missing `profit\_inr` values: 94
 
 
 
@@ -112,7 +138,7 @@ After imputation:
 
 \- Missing category values: 0
 
-\- Missing profit values: 0
+\- Missing `profit\_inr` values: 0
 
 
 
@@ -120,11 +146,7 @@ After imputation:
 
 
 
-The raw region field contained inconsistent capitalization, spacing, and aliases.
-
-
-
-After normalization, the order dataset contains 9 active canonical regions:
+The 16 distinct raw region variants were standardized to 9 active canonical regions:
 
 
 
@@ -148,7 +170,7 @@ After normalization, the order dataset contains 9 active canonical regions:
 
 
 
-Kurnool remains in the region master data but intentionally has zero orders.
+Kurnool remains in `regions\_master.csv` as the tenth master region and intentionally has zero orders.
 
 
 
@@ -156,35 +178,47 @@ Kurnool remains in the region master data but intentionally has zero orders.
 
 
 
-The cleaned dataset passed the required schema validation:
+The cleaned dataset passed validation against the required schema.
 
 
 
-`status = validated`
+A deliberately broken copy was then created by removing the required `profit\_inr` column.
 
 
 
-A deliberately broken copy of the dataset was created by removing the `profit` column.
+The validator correctly blocked the broken dataset because `profit\_inr` was missing.
 
 
 
-The validator correctly returned:
+This confirms that the pipeline does not silently continue when a required field is unavailable.
 
 
 
-`status = blocked\_schema`
+\## Database Cross-Checks
 
 
 
-with:
+The cleaned data was loaded into SQLite and produced the following verified results:
 
 
 
-`missing\_columns = \['profit']`
+\- Regions in master table: 10
+
+\- Orders in clean order table: 2,100
+
+\- Duplicate `order\_id` values: 0
+
+\- LEFT JOIN row count: 2,101
+
+\- INNER JOIN row count: 2,100
+
+\- Kurnool `COUNT(\*)`: 1
+
+\- Kurnool `COUNT(order\_id)`: 0
 
 
 
-This demonstrates that the pipeline blocks processing when a required field is unavailable.
+The Kurnool result demonstrates the difference between counting the preserved master-region row and counting matched order records in a LEFT JOIN.
 
 
 
@@ -192,9 +226,9 @@ This demonstrates that the pipeline blocks processing when a required field is u
 
 
 
-The cleaning process improved the accuracy, completeness, consistency, timeliness, validity, uniqueness, and relevance of the dataset.
+All seven required data-quality dimensions - accuracy, completeness, consistency, timeliness, validity, uniqueness, and relevance - are addressed by the cleaning and validation workflow.
 
 
 
-The final cleaned dataset contains 2,100 order records with standardized regional values, no missing category values, no missing profit values, and a validated schema. It is ready for loading into the SQLite database and for subsequent regional performance analysis.
+The final cleaned dataset contains 2,100 order records, 9 active canonical order regions, no missing category values, no missing `profit\_inr` values, and a validated 8-column schema. The tenth master region, Kurnool, is preserved with zero orders for correct master-data reporting.
 

@@ -27,6 +27,7 @@ def main():
         "queries.py",
         "metrics_engine.py",
         "draft_report.py",
+        "review_gate.py",
     ]
 
     print("PHARMEASY REGIONAL PULSE PIPELINE")
@@ -45,10 +46,12 @@ def main():
     print("- pharmeasy.db")
     print("- Regional monthly metrics")
     print("- CII draft report")
+    print("- Human review-gate acceptance checks")
+    print("- audit_log.jsonl")
 
     print(
-        "\nHuman-reviewed reporting and dashboard files "
-        "are available separately in the project folder."
+        "\nThe Streamlit dashboard is available in app.py "
+        "and can be launched separately."
     )
 
 

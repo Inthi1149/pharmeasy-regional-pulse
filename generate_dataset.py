@@ -1,346 +1,137 @@
+"""
+generate_dataset.py -- PharmEasy Regional Pulse capstone dataset builder.
+Deterministic (fixed seed = 2026): every student who runs this file unmodified
+gets byte-identical pharmeasy_orders_raw.csv and regions_master.csv.
+"""
 import random
-import numpy as np
-import pandas as pd
+import csv
+from collections import defaultdict
 
-SEED = 2026
-random.seed(SEED)
-np.random.seed(SEED)
+rng = random.Random(2026)
 
-OUTPUT_FILE = "pharmeasy_orders_raw.csv"
-
-REGIONS = [
-    "Hyderabad",
-    "Warangal",
-    "Vijayawada",
-    "Visakhapatnam",
-    "Guntur",
-    "Nellore",
-    "Tirupati",
-    "Karimnagar",
-    "Bengaluru",
+REGIONS_ACTIVE = [
+    "Hyderabad", "Warangal", "Vijayawada", "Visakhapatnam",
+    "Guntur", "Nellore", "Tirupati", "Karimnagar", "Bengaluru",
 ]
-
-# These monthly multipliers are designed to produce the
-# required >8% / <=8% regional movement patterns.
-MONTH_FACTORS = {
-    "Hyderabad": {
-        4: 1.00,
-        5: 1.16,
-        6: 1.40,
-    },
-    "Warangal": {
-        4: 1.00,
-        5: 0.78,
-        6: 0.66,
-    },
-    "Vijayawada": {
-        4: 1.00,
-        5: 1.02,
-        6: 0.90,
-    },
-    "Visakhapatnam": {
-        4: 1.00,
-        5: 0.38,
-        6: 0.76,
-    },
-    "Guntur": {
-        4: 1.00,
-        5: 2.2219,
-        6: 1.5965,
-    },
-    "Nellore": {
-        4: 1.00,
-        5: 1.06,
-        6: 1.10,
-    },
-    "Tirupati": {
-        4: 1.00,
-        5: 1.67,
-        6: 1.39,
-    },
-    "Karimnagar": {
-        4: 1.00,
-        5: 1.24,
-        6: 0.69,
-    },
-    "Bengaluru": {
-        4: 1.00,
-        5: 0.85,
-        6: 0.84,
-    },
+REGION_ZERO_ORDERS = "Kurnool"
+REGIONS_MASTER = REGIONS_ACTIVE + [REGION_ZERO_ORDERS]
+STATE_OF = {
+    "Hyderabad": "Telangana", "Warangal": "Telangana", "Karimnagar": "Telangana",
+    "Vijayawada": "Andhra Pradesh", "Visakhapatnam": "Andhra Pradesh",
+    "Guntur": "Andhra Pradesh", "Nellore": "Andhra Pradesh", "Tirupati": "Andhra Pradesh",
+    "Kurnool": "Andhra Pradesh", "Bengaluru": "Karnataka",
+}
+TIER_OF = {
+    "Hyderabad": "Tier-1", "Bengaluru": "Tier-1",
+    "Vijayawada": "Tier-2", "Visakhapatnam": "Tier-2", "Warangal": "Tier-2",
+    "Guntur": "Tier-2", "Nellore": "Tier-2", "Tirupati": "Tier-2",
+    "Karimnagar": "Tier-3", "Kurnool": "Tier-3",
 }
 
 CATEGORIES = [
-    "Medicines",
-    "Personal Care",
-    "Baby Care",
-    "Wellness",
-    "Medical Devices",
-    "Ayurveda",
+    "OTC Medicines", "Prescription Medicines", "Wellness & Nutrition",
+    "Personal Care", "Medical Devices", "Lab Tests",
 ]
+CAT_WEIGHTS = [0.30, 0.22, 0.18, 0.14, 0.10, 0.06]
 
 PRODUCTS = {
-    "Paracetamol 500mg": "Medicines",
-    "Azithromycin 500mg": "Medicines",
-    "Cetirizine 10mg": "Medicines",
-
-    "Face Wash": "Personal Care",
-    "Shampoo": "Personal Care",
-    "Moisturizer": "Personal Care",
-
-    "Baby Diapers": "Baby Care",
-    "Baby Lotion": "Baby Care",
-    "Baby Shampoo": "Baby Care",
-
-    "Vitamin C Tablets": "Wellness",
-    "Multivitamin Tablets": "Wellness",
-    "Protein Powder": "Wellness",
-
-    "Blood Pressure Monitor": "Medical Devices",
-    "Digital Thermometer": "Medical Devices",
-    "Glucometer": "Medical Devices",
-
-    "Ashwagandha Capsules": "Ayurveda",
-    "Triphala Tablets": "Ayurveda",
-    "Chyawanprash": "Ayurveda",
+    "OTC Medicines": ["Paracetamol 500mg", "Cetirizine 10mg", "ORS Sachet", "Cough Syrup 100ml", "Antacid Tablets"],
+    "Prescription Medicines": ["Metformin 500mg", "Amlodipine 5mg", "Atorvastatin 10mg", "Azithromycin 500mg", "Insulin Pen"],
+    "Wellness & Nutrition": ["Multivitamin Tablets", "Whey Protein 1kg", "Fish Oil Capsules", "Immunity Booster Syrup", "Calcium + D3 Tablets"],
+    "Personal Care": ["Sunscreen SPF50", "Hand Sanitizer 500ml", "Face Wash", "Antiseptic Liquid", "Baby Diaper Pack"],
+    "Medical Devices": ["Digital BP Monitor", "Pulse Oximeter", "Glucometer Kit", "Nebulizer", "Thermometer"],
+    "Lab Tests": ["Full Body Checkup", "Thyroid Profile", "Vitamin D Test", "HbA1c Test", "Lipid Profile"],
 }
 
-CATEGORY_MARGIN = {
-    "Medicines": 0.14,
-    "Personal Care": 0.22,
-    "Baby Care": 0.18,
-    "Wellness": 0.25,
-    "Medical Devices": 0.16,
-    "Ayurveda": 0.20,
+UNIT_PRICE = {
+    "OTC Medicines": (40, 220), "Prescription Medicines": (90, 650),
+    "Wellness & Nutrition": (250, 1400), "Personal Care": (80, 550),
+    "Medical Devices": (350, 3200), "Lab Tests": (400, 1800),
 }
 
-PRODUCT_NAMES = list(PRODUCTS.keys())
+MONTHS = [("2026-04", 30), ("2026-05", 31), ("2026-06", 30)]
 
-
-# Exactly 16 raw region representations.
-RAW_REGION_VARIANTS = {
-    "Hyderabad": [
-        "Hyderabad",
-        "HYDERABAD",
-    ],
-    "Warangal": [
-        "Warangal",
-        " warangal",
-    ],
-    "Vijayawada": [
-        "Vijayawada",
-        "VIJAYAWADA",
-    ],
-    "Visakhapatnam": [
-        "Visakhapatnam",
-        "Vizag",
-    ],
-    "Guntur": [
-        "Guntur",
-        "GUNTUR",
-    ],
-    "Nellore": [
-        "Nellore",
-        " nellore",
-    ],
-    "Tirupati": [
-        "Tirupati",
-    ],
-    "Karimnagar": [
-        "Karimnagar",
-    ],
-    "Bengaluru": [
-        "Bengaluru",
-        "Bangalore",
-    ],
+REGION_BASE_WEIGHT = {
+    "Hyderabad": 22, "Bengaluru": 16, "Vijayawada": 13, "Visakhapatnam": 12,
+    "Warangal": 9, "Guntur": 9, "Nellore": 8, "Tirupati": 7, "Karimnagar": 4,
 }
+REGION_MONTH_MULTIPLIER = {
+    "2026-04": defaultdict(lambda: 1.00),
+    "2026-05": defaultdict(lambda: 1.00),
+    "2026-06": defaultdict(lambda: 1.00),
+}
+REGION_MONTH_MULTIPLIER["2026-05"]["Visakhapatnam"] = 0.45
+REGION_MONTH_MULTIPLIER["2026-06"]["Visakhapatnam"] = 0.70
+REGION_MONTH_MULTIPLIER["2026-06"]["Hyderabad"] = 1.35
 
+TARGET_ORDERS_PER_MONTH = 700
 
-def create_orders():
-    rows = []
+clean_rows = []
+order_seq = 1
+for month, ndays in MONTHS:
+    weights = [REGION_BASE_WEIGHT[r] * REGION_MONTH_MULTIPLIER[month][r] for r in REGIONS_ACTIVE]
+    for _ in range(TARGET_ORDERS_PER_MONTH):
+        region = rng.choices(REGIONS_ACTIVE, weights=weights, k=1)[0]
+        category = rng.choices(CATEGORIES, weights=CAT_WEIGHTS, k=1)[0]
+        product = rng.choice(PRODUCTS[category])
+        day = rng.randint(1, ndays)
+        order_date = f"{month}-{day:02d}"
+        qty = rng.randint(1, 5)
+        lo, hi = UNIT_PRICE[category]
+        unit_price = round(rng.uniform(lo, hi), 2)
+        sales = round(unit_price * qty, 2)
+        margin_pct = rng.uniform(0.08, 0.22)
+        profit = round(sales * margin_pct, 2)
+        clean_rows.append({
+            "order_id": f"PE{order_seq:05d}",
+            "order_date": order_date,
+            "region": region,
+            "category": category,
+            "product": product,
+            "quantity": qty,
+            "sales_inr": sales,
+            "profit_inr": profit,
+        })
+        order_seq += 1
 
-    # 2,100 unique orders distributed evenly enough
-    # across region/month combinations.
-    combinations = []
+working = [dict(r) for r in clean_rows]
 
-    for region in REGIONS:
-        for month in [4, 5, 6]:
-            combinations.append((region, month))
+missing_profit_idx = set(rng.sample(range(len(working)), 94))
+missing_category_idx = set(rng.sample(range(len(working)), 48))
+for i in missing_profit_idx:
+    working[i]["profit_inr"] = ""
+for i in missing_category_idx:
+    working[i]["category"] = ""
 
-    for order_id in range(1, 2101):
+messy_variants = {
+    "Hyderabad": [" hyderabad", "HYDERABAD ", "Hyderabad"],
+    "Bengaluru": ["bengaluru ", " BENGALURU", "Bengaluru"],
+    "Vijayawada": ["vijayawada", " Vijayawada ", "VIJAYAWADA"],
+}
+messy_idx = rng.sample(range(len(working)), 161)
+for i in messy_idx:
+    r = working[i]["region"]
+    if r in messy_variants:
+        working[i]["region"] = rng.choice(messy_variants[r])
 
-        region, month = combinations[
-            (order_id - 1) % len(combinations)
-        ]
+dup_source_idx = rng.sample(range(len(working)), 59)
+duplicates = [dict(working[i]) for i in dup_source_idx]
 
-        product = random.choice(PRODUCT_NAMES)
-        category = PRODUCTS[product]
+raw_rows = working + duplicates
+rng.shuffle(raw_rows)
 
-        quantity = random.randint(1, 5)
+with open("pharmeasy_orders_raw.csv", "w", newline="") as f:
+    w = csv.DictWriter(f, fieldnames=["order_id", "order_date", "region", "category", "product", "quantity", "sales_inr", "profit_inr"])
+    w.writeheader()
+    for r in raw_rows:
+        w.writerow(r)
 
-        # Stable base value. The monthly factor controls
-        # regional month-over-month movement.
-        base_sales = 1000.00
+with open("regions_master.csv", "w", newline="") as f:
+    w = csv.DictWriter(f, fieldnames=["region", "state", "tier"])
+    w.writeheader()
+    for r in REGIONS_MASTER:
+        w.writerow({"region": r, "state": STATE_OF[r], "tier": TIER_OF[r]})
 
-        sales = round(
-            base_sales
-            * MONTH_FACTORS[region][month],
-            2
-        )
-
-        unit_price = round(
-            sales / quantity,
-            2
-        )
-
-        margin = CATEGORY_MARGIN[category]
-
-        profit = round(
-            sales * margin,
-            2
-        )
-
-        day = ((order_id - 1) % 28) + 1
-
-        order_date = (
-            f"2026-{month:02d}-{day:02d}"
-        )
-
-        variants = RAW_REGION_VARIANTS[region]
-
-        # Cycle through variants deterministically.
-        raw_region = variants[
-            (order_id - 1) % len(variants)
-        ]
-
-        rows.append(
-            {
-                "order_id": order_id,
-                "order_date": order_date,
-                "region": raw_region,
-                "product": product,
-                "category": category,
-                "quantity": quantity,
-                "unit_price": unit_price,
-                "sales": sales,
-                "profit": profit,
-            }
-        )
-
-    return pd.DataFrame(rows)
-
-
-def main():
-
-    # -----------------------------------
-    # Create 2,100 unique orders
-    # -----------------------------------
-
-    df = create_orders()
-
-    assert len(df) == 2100
-
-    # -----------------------------------
-    # Verify exactly 16 raw region values
-    # -----------------------------------
-
-    raw_region_count = df["region"].nunique()
-
-    assert raw_region_count == 16, (
-        f"Expected 16 raw region variants, "
-        f"got {raw_region_count}"
-    )
-
-    # -----------------------------------
-    # Add 48 missing category values
-    # -----------------------------------
-
-    category_missing_idx = df.sample(
-        n=48,
-        random_state=SEED + 1
-    ).index
-
-    df.loc[
-        category_missing_idx,
-        "category"
-    ] = np.nan
-
-    # -----------------------------------
-    # Add 94 missing profit values
-    # -----------------------------------
-
-    profit_missing_idx = df.sample(
-        n=94,
-        random_state=SEED + 2
-    ).index
-
-    df.loc[
-        profit_missing_idx,
-        "profit"
-    ] = np.nan
-
-    # -----------------------------------
-    # Add 59 EXACT duplicate rows
-    # -----------------------------------
-
-    eligible = df[
-        df["category"].notna()
-        & df["profit"].notna()
-    ]
-
-    duplicates = eligible.sample(
-        n=59,
-        random_state=SEED
-    ).copy()
-
-    df = pd.concat(
-        [df, duplicates],
-        ignore_index=True
-    )
-
-    # -----------------------------------
-    # Acceptance checks
-    # -----------------------------------
-
-    assert len(df) == 2159
-
-    assert df["category"].isna().sum() == 48
-
-    assert df["profit"].isna().sum() == 94
-
-    assert df["region"].nunique() == 16
-
-    assert df.duplicated().sum() == 59
-
-    # -----------------------------------
-    # Save
-    # -----------------------------------
-
-    df.to_csv(
-        OUTPUT_FILE,
-        index=False
-    )
-
-    print("Dataset generation successful.")
-    print(f"Raw rows: {len(df)}")
-    print(
-        f"Exact duplicates: "
-        f"{df.duplicated().sum()}"
-    )
-    print(
-        f"Raw region variants: "
-        f"{df['region'].nunique()}"
-    )
-    print(
-        f"Missing category: "
-        f"{df['category'].isna().sum()}"
-    )
-    print(
-        f"Missing profit: "
-        f"{df['profit'].isna().sum()}"
-    )
-    print(f"Saved to {OUTPUT_FILE}")
-
-
-if __name__ == "__main__":
-    main()
+assert len(raw_rows) == 2159, f"expected 2159 raw rows, got {len(raw_rows)}"
+assert len(REGIONS_MASTER) == 10, f"expected 10 regions, got {len(REGIONS_MASTER)}"
+print(f"Wrote pharmeasy_orders_raw.csv ({len(raw_rows)} rows) and regions_master.csv ({len(REGIONS_MASTER)} rows).")

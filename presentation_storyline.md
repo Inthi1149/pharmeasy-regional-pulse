@@ -1,4 +1,4 @@
-\# PharmEasy Regional Pulse — Presentation Storyline
+\# PharmEasy Regional Pulse - Presentation Storyline
 
 
 
@@ -6,7 +6,7 @@
 
 
 
-Guntur sales increased from 78,000.00 in April 2026 to 173,308.20 in May 2026, representing a +122.19% month-to-month increase. Sales then decreased to 124,527.00 in June, a -28.15% change from May.
+Guntur sales increased from INR 62,442.27 in April 2026 to INR 138,738.93 in May 2026, representing a +122.19% month-to-month increase. Sales then decreased to INR 99,745.18 in June 2026, a -28.11% change from May.
 
 
 
@@ -18,7 +18,7 @@ The dataset verifies these sales movements but does not establish their cause.
 
 
 
-\## 1. Executive Storyline — SCR
+\## 1. Executive Storyline - SCR
 
 
 
@@ -34,11 +34,11 @@ The PharmEasy Regional Pulse analysis reviews regional sales and profit performa
 
 
 
-Guntur recorded the most prominent April-to-May movement in the analysis. Sales increased from 78,000.00 in April to 173,308.20 in May, a +122.19% increase, before declining to 124,527.00 in June.
+Guntur recorded the flagship April-to-May movement in the analysis. Sales increased from INR 62,442.27 in April to INR 138,738.93 in May, a +122.19% increase, before declining to INR 99,745.18 in June.
 
 
 
-The size of the movement makes Guntur important to investigate, but the available dataset does not verify why the increase occurred. The 8% threshold is a business rule for identifying material movements and is not a statistical-significance test.
+The size of the movement makes Guntur important to investigate, but the available dataset does not verify why the increase occurred. The 8% threshold is an operational-alert business rule for identifying material movements and is not a statistical-significance test.
 
 
 
@@ -46,7 +46,7 @@ The size of the movement makes Guntur important to investigate, but the availabl
 
 
 
-Management should review Guntur's underlying order volume, category mix, quantities, unit prices, sales, and profit across April, May, and June. If campaign, promotion, inventory, or operational records are available, they should be compared with the May period before assigning a cause or taking action.
+Management should review Guntur's underlying order volume, category mix, quantities, sales, and profit across April, May, and June. If campaign, promotion, inventory, or operational records are available, they should be compared with the May period before assigning a cause or taking action.
 
 
 
@@ -54,7 +54,7 @@ Management should review Guntur's underlying order volume, category mix, quantit
 
 
 
-\## 2. Regional Manager Storyline — OCD
+\## 2. Regional Manager Storyline - OCD
 
 
 
@@ -62,7 +62,7 @@ Management should review Guntur's underlying order volume, category mix, quantit
 
 
 
-Guntur is a priority region for review because sales changed materially across the three-month period. The April-to-May increase was +122.19%, followed by a -28.15% May-to-June movement.
+Guntur is a priority region for review because sales changed materially across the three-month period. The April-to-May increase was +122.19%, followed by a -28.11% May-to-June movement.
 
 
 
@@ -78,7 +78,7 @@ Use the dashboard's category breakdown to examine whether the sales movement is 
 
 
 
-Drill into Guntur's region/month detail and underlying orders. Review order counts, category mix, quantities, unit prices, sales, and profit for the three months. Any explanation for the May increase should remain a hypothesis until supporting operational or commercial evidence is verified.
+Drill into Guntur's region/month detail and underlying orders. Review order counts, category mix, quantities, sales, and profit for the three months. Any explanation for the May increase should remain a hypothesis until supporting operational or commercial evidence is verified.
 
 
 
@@ -86,7 +86,7 @@ Drill into Guntur's region/month detail and underlying orders. Review order coun
 
 
 
-\## 3. Pushback Q\&A — Direct Acknowledgement Pattern
+\## 3. Pushback Q\&A - Direct Acknowledgement Pattern
 
 
 
@@ -98,7 +98,7 @@ Drill into Guntur's region/month detail and underlying orders. Review order coun
 
 
 
-\*\*Verified vs. not verified:\*\* What is verified is that Guntur sales increased from 78,000.00 in April to 173,308.20 in May, or +122.19%. The current dataset does not verify that a promotion caused the increase.
+\*\*Verified vs. not verified:\*\* What is verified is that Guntur sales increased from INR 62,442.27 in April to INR 138,738.93 in May, or +122.19%. The current dataset does not verify that a promotion caused the increase.
 
 
 
